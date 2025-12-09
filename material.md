@@ -6,27 +6,27 @@ A comprehensive guide for performance testing with k6, an open-source load testi
 
 ## 📋 Table of Contents
 
-- [What is k6](#-what-is-k6)
-- [System Requirements](#-system-requirements)
-- [Installation](#-installation)
-- [Project Setup](#-project-setup)
-- [Creating Your First Script](#-creating-your-first-script)
-- [Running Tests](#-running-tests)
-- [Understanding Options](#-understanding-options)
-- [HTTP Testing](#-http-testing)
-- [Working with Responses](#-working-with-responses)
-- [Test Validation](#-test-validation)
-- [Execution Context](#-execution-context)
-- [Test Lifecycle](#-test-lifecycle)
-- [Modular Scripts](#-modular-scripts)
-- [Environment Variables](#-environment-variables)
-- [Scenarios](#-scenarios)
-- [Metrics](#-metrics)
-- [Thresholds](#-thresholds)
-- [Output & Reporting](#-output--reporting)
-- [Advanced Features](#-advanced-features)
-- [Best Practices](#-best-practices)
-- [Troubleshooting](#-troubleshooting)
+- [What is k6](#what-is-k6)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Project Setup](#project-setup)
+- [Creating Your First Script](#creating-your-first-script)
+- [Running Tests](#running-tests)
+- [Understanding Options](#understanding-options)
+- [HTTP Testing](#http-testing)
+- [Working with Responses](#working-with-responses)
+- [Test Validation](#test-validation)
+- [Execution Context](#execution-context)
+- [Test Lifecycle](#test-lifecycle)
+- [Modular Scripts](#modular-scripts)
+- [Environment Variables](#environment-variables)
+- [Scenarios](#scenarios)
+- [Metrics](#metrics)
+- [Thresholds](#thresholds)
+- [Output & Reporting](#output--reporting)
+- [Advanced Features](#advanced-features)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -52,6 +52,19 @@ k6 is an open-source load testing tool that makes performance testing easy and d
 - k6 is built using Golang
 - Uses Goja library to execute JavaScript code in Golang
 - JavaScript features are limited to what Goja supports
+
+---
+
+## 📦 System Requirements
+
+k6 is a lightweight tool that runs on:
+- macOS
+- Linux
+- Windows
+
+Minimum requirements:
+- 2GB RAM recommended
+- Modern CPU (multi-core recommended for high-load tests)
 
 ---
 
@@ -758,6 +771,43 @@ For each scenario, virtual users are executed by executors. There are many types
     An executor similar to constant arrival rate, except the number of iterations can scale up or down following the determined stages.
     
     **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/ramping-arrival-rate`
+
+---
+
+## 📊 Metrics
+
+k6 automatically collects built-in metrics and you can also create custom metrics to track specific behaviors in your tests.
+
+- **Built-in Metrics**
+
+  k6 provides several built-in metrics:
+  - **http_reqs** - Total number of HTTP requests
+  - **http_req_duration** - Time taken for HTTP requests
+  - **http_req_failed** - Rate of failed requests
+  - **vus** - Number of active virtual users
+  - **iterations** - Number of iterations completed
+
+- **Custom Metrics**
+
+  You can create custom metrics using:
+  - **Counter** - Cumulative metric (counts occurrences)
+  - **Gauge** - Tracks the latest value
+  - **Rate** - Tracks percentage of values that are non-zero
+  - **Trend** - Calculates statistics (min, max, avg, percentiles)
+
+  `Example:`
+  
+  ```javascript
+  import { Counter } from 'k6/metrics';
+  
+  const myCounter = new Counter('my_custom_counter');
+  
+  export default function() {
+    myCounter.add(1);
+  }
+  ```
+  
+  **Reference:** `https://grafana.com/docs/k6/latest/using-k6/metrics`
      
 ---
 
@@ -910,3 +960,12 @@ k6 provides JavaScript libraries that can be used to simplify script creation. I
   ```
 
  - **Reference:** `https://jslib.k6.io`
+
+---
+
+## 💡 Best Practices
+
+1. **Start Small** - Begin with low VUs and short duration, then scale up
+2. **Use Realistic Data** - Test with production-like data and scenarios
+3. **Monitor System Resources** - Watch CPU, memory, and network on both client and server
+4. **Set Clear Thresholds** - Define success criteria before running tests
