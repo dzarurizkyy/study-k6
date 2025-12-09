@@ -26,7 +26,6 @@ A comprehensive guide for performance testing with k6, an open-source load testi
 - [Output & Reporting](#-output--reporting)
 - [Advanced Features](#-advanced-features)
 - [Best Practices](#-best-practices)
-- [Troubleshooting](#-troubleshooting)
 
 ---
 
