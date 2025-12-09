@@ -852,17 +852,9 @@ By default, test results are always considered successful, whether there are err
 
 ### JavaScript Libraries
 
-k6 provides JavaScript libraries that can be used to simplify script creation. It's recommended to read the documentation to understand the purpose of each JavaScript library provided.
+k6 provides JavaScript libraries that can be used to simplify script creation. It's recommended to read the documentation to understand the purpose of each JavaScript library provided
 
-Reference: https://grafana.com/docs/k6/latest/javascript-api/
-
-### Remote Modules
-
-Besides JavaScript libraries provided directly in k6, k6 has libraries that can be used remotely.
-
-Reference: https://jslib.k6.io/
-
-- **Example using remote module**
+- **Example using JavaScript Libraries**
   
   ```javascript
   import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
@@ -884,3 +876,5 @@ Reference: https://jslib.k6.io/
     }
   }
   ```
+
+ - **Reference:** `https://jslib.k6.io`
