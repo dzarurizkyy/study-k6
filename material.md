@@ -734,22 +734,27 @@ For each scenario, virtual users are executed by executors. There are many types
 - **Number of Virtual Users**
 
   - **Constant VUs**
+  
     An executor where the number of virtual users is determined, and each virtual user will continuously perform iterations until the specified duration is reached.
     
     **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/constant-vus`
     
   - **Ramping VUs:**
+  
     An executor that creates a specified number of virtual users at each stage, and will scale up or down following the next stage until all stages are completed.
     
     **Reference**: `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/constant-vus`
     
 - **Iteration Rate**
+
   - **Constant Arrival Rate**
+  
     An executor that performs a constant number of iterations as specified. For example, setting 100 iterations per 1 second for 30 seconds means it will execute 100 iterations every second for 30 seconds.
     
     **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/constant-arrival-rate`
     
   - **Ramping Arrival Rate:**
+  
     An executor similar to constant arrival rate, except the number of iterations can scale up or down following the determined stages.
     
     **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/ramping-arrival-rate`
