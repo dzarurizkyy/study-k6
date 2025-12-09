@@ -685,46 +685,75 @@ For each scenario, virtual users are executed by executors. There are many types
 
 - **Number of Iterations Executors**
 
-  - **Shared iterations**
-  
-    Executor where total iterations are shared across all virtual users.
-    
-    `Example:`
-    
-      ```javascript
-      import { registerUser } from "./helper/user.js";
+   - **Shared iterations**
+   
+     Executor where total iterations are shared across all virtual users.
+          
+      `Example:`
       
-      export const options = {
-        scenarios: {
-          userRegistration: {
-            exec: "userRegistration",
-            executor: "shared-iterations",
-            vus: 10,
-            iterations: 200,
-            maxDuration: "10s"
+        ```javascript
+        import { registerUser } from "./helper/user.js";
+        
+        export const options = {
+          scenarios: {
+            userRegistration: {
+              exec: "userRegistration",
+              executor: "shared-iterations",
+              vus: 10,
+              iterations: 200,
+              maxDuration: "10s"
+            }
+          }
+        };
+        
+        export function userRegistration() {
+          const uniqueId = new Date().getTime();
+          const registerRequest = {
+            username: `user-${uniqueId}`,
+            password: 'secret',
+            name: "Dzaru Rizky Fathan Fortuna"
+          };
+        
+          const response = registerUser(registerRequest);
+          if (response.status === 200) {
+            registerCounterSuccess.add(1);
+          } else {
+            registerCounterError.add(1);
           }
         }
-      };
-      
-      export function userRegistration() {
-        const uniqueId = new Date().getTime();
-        const registerRequest = {
-          username: `user-${uniqueId}`,
-          password: 'secret',
-          name: "Dzaru Rizky Fathan Fortuna"
-        };
-      
-        const response = registerUser(registerRequest);
-        if (response.status === 200) {
-          registerCounterSuccess.add(1);
-        } else {
-          registerCounterError.add(1);
-        }
-      }
-      ```
+        ```
      
      **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/shared-iterations`
+     
+   - **Pre-VU Iterations**
   
+      An executor where each virtual user has a predetermined number of iterations. For example, creating 10 virtual users where each virtual user will perform 100 iterations.
+
+      **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/per-vu-iterations`
+      
+- **Number of Virtual Users**
+
+  - **Constant VUs**
+    An executor where the number of virtual users is determined, and each virtual user will continuously perform iterations until the specified duration is reached.
+    
+    **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/constant-vus`
+    
+  - **Ramping VUs:**
+    An executor that creates a specified number of virtual users at each stage, and will scale up or down following the next stage until all stages are completed.
+    
+    **Reference**: `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/constant-vus`
+    
+- **Iteration Rate**
+  - **Constant Arrival Rate**
+    An executor that performs a constant number of iterations as specified. For example, setting 100 iterations per 1 second for 30 seconds means it will execute 100 iterations every second for 30 seconds.
+    
+    **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/constant-arrival-rate`
+    
+  - **Ramping Arrival Rate:**
+    An executor similar to constant arrival rate, except the number of iterations can scale up or down following the determined stages.
+    
+    **Reference:** `https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/ramping-arrival-rate`
+     
 ---
 
 ## 🎯 Thresholds
@@ -848,9 +877,7 @@ By default, test results are always considered successful, whether there are err
 
 ---
 
-## 🚀 Advanced Features
-
-### JavaScript Libraries
+## JavaScript Libraries
 
 k6 provides JavaScript libraries that can be used to simplify script creation. It's recommended to read the documentation to understand the purpose of each JavaScript library provided
 
