@@ -877,7 +877,7 @@ By default, test results are always considered successful, whether there are err
 
 ---
 
-## JavaScript Libraries
+## 🏛️ JavaScript Libraries
 
 k6 provides JavaScript libraries that can be used to simplify script creation. It's recommended to read the documentation to understand the purpose of each JavaScript library provided
 
