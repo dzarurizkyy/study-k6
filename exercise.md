@@ -4,7 +4,7 @@ A practical guide to API load testing using K6 with ramping VUs, custom metrics,
 
 ## 📋 Prerequisites
 
-- [K6](https://k6.io/docs/getting-started/installation/) installed
+- K6 installed
 - Node.js and npm (for project initialization)
 - Basic understanding of JavaScript
 
@@ -150,7 +150,7 @@ After the test completes, K6 will display:
 - Threshold pass/fail status
 - Virtual user statistics
 
-`Example Output`
+`Example Output:`
 
 ```
 ✓ status is 201
