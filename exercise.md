@@ -865,6 +865,3 @@ Once you've completed the practice above, try these on your own:
 | Summary export to JSON | Step 12a |
 | Real-time output to CSV & JSON | Step 12b, 12c |
 | Web dashboard | Step 12d |
-## 👨‍💻 Author
-
-- [Dzaru Rizky Fathan Fortuna](https://www.linkedin.com/in/dzarurizky)
