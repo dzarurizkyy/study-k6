@@ -6,15 +6,7 @@ A complete hands-on scenario that covers all core k6 concepts: project setup, HT
 
 ## 📖 Scenario
 
-You are a backend engineer at **TokoKita** — an e-commerce platform. Before going live, you need to load test the REST API to ensure it can handle real traffic. The API has these endpoints:
-
-- `POST /api/users` — Register a new user
-- `POST /api/users/login` — Login and get a token
-- `GET /api/users/current` — Get current user profile (requires auth)
-- `POST /api/products` — Create a product (requires auth)
-- `GET /api/products` — Get all products (requires auth)
-
-You will progressively build the load test — from a single GET request all the way to a multi-scenario test with thresholds, custom metrics, and real-time output.
+You are a backend engineer at **TokoKita** — a contact management platform. Before going live, you need to load test the REST API to ensure it can handle real traffic. You will progressively build the load test — from a single GET request all the way to a multi-scenario test with thresholds, custom metrics, and real-time output.
 
 ---
 
@@ -210,7 +202,7 @@ export const options = {
 export default function () {
   const uniqueId = new Date().getTime();
 
-  // Step 1 — Register/products/
+  // Step 1 — Register
   const registerBody = {
     username: `user-${uniqueId}`,
     password: 'secret',
@@ -275,39 +267,35 @@ export default function () {
   const uniqueId = new Date().getTime();
 
   // Register
-  const registerBody = {
-    username: `user-${uniqueId}`,
-    password: 'secret',
-    name: 'Dzaru Rizky Fathan Fortuna'
-  };
-
-  const registerResponse = http.post('http://localhost:3000/api/users', JSON.stringify(registerBody), {
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-  });
+  const registerResponse = http.post('http://localhost:3000/api/users',
+    JSON.stringify({
+      username: `user-${uniqueId}`,
+      password: 'rahasia',
+      name: 'Dzaru Rizky Fathan Fortuna'
+    }), {
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    }
+  );
 
   const checkRegister = check(registerResponse, {
-    'register status is 200':          (r) => r.status === 200,
-    'register response data not null':  (r) => r.json().data !== null,
+    'register status is 200':         (r) => r.status === 200,
+    'register username not null':     (r) => r.json().data.username !== null,
   });
 
-  // If register fails, stop this iteration — no point continuing
   if (!checkRegister) {
     fail(`Register failed for user-${uniqueId}`);
   }
 
   // Login
-  const loginBody = {
-    username: `user-${uniqueId}`,
-    password: 'secret'
-  };
-
-  const loginResponse = http.post('http://localhost:3000/api/users/login', JSON.stringify(loginBody), {
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-  });
+  const loginResponse = http.post('http://localhost:3000/api/users/login',
+    JSON.stringify({ username: `user-${uniqueId}`, password: 'rahasia' }), {
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    }
+  );
 
   const checkLogin = check(loginResponse, {
-    'login status is 200':        (r) => r.status === 200,
-    'login token must exist':     (r) => r.json().data.token !== null,
+    'login status is 200':    (r) => r.status === 200,
+    'login token must exist': (r) => r.json().data.token !== null,
   });
 
   if (!checkLogin) {
@@ -316,13 +304,54 @@ export default function () {
 
   const token = loginResponse.json().data.token;
 
-  // Get current user
-  const profileResponse = http.get('http://localhost:3000/api/users/current', {
-    headers: { 'Accept': 'application/json', 'Authorization': token }
+  // Create contact
+  const contactResponse = http.post('http://localhost:3000/api/contacts',
+    JSON.stringify({
+      first_name: 'Dzaru',
+      last_name: 'Fortuna',
+      email: `dzaru-${uniqueId}@example.com`,
+      phone: '081217147620'
+    }), {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+  );
+
+  const checkContact = check(contactResponse, {
+    'create contact status is 200':  (r) => r.status === 200,
+    'contact id must exist':         (r) => r.json().data.id !== null,
   });
 
-  check(profileResponse, {
-    'get profile status is 200': (r) => r.status === 200,
+  if (!checkContact) {
+    fail(`Create contact failed for user-${uniqueId}`);
+  }
+
+  const contactId = contactResponse.json().data.id;
+
+  // Create address
+  const addressResponse = http.post(
+    `http://localhost:3000/api/contacts/${contactId}/addresses`,
+    JSON.stringify({
+      street: 'Jl. Merdeka No. 10',
+      city: 'Surabaya',
+      province: 'Jawa Timur',
+      country: 'Indonesia',
+      postal_code: '60111'
+    }), {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+  );
+
+  check(addressResponse, {
+    'create address status is 200': (r) => r.status === 200,
+    'address country is Indonesia': (r) => r.json().data.country === 'Indonesia',
   });
 
   sleep(1);
@@ -347,7 +376,7 @@ checks.........................: 97.50% ✓ 975  ✗ 25
 
 ## 6. Execution Context
 
-When running with multiple VUs, you need per-VU identity (e.g., to log in as a pre-seeded user). Use `k6/execution`.
+When running with multiple VUs, you need per-VU identity to login as a pre-seeded user. Use `k6/execution`.
 
 Create `src/exec-context.js`:
 
@@ -365,66 +394,8 @@ export default function () {
   // Each VU gets a unique ID: 1, 2, 3, 4, 5
   const username = `testuser${exec.vu.idInInstance}`;
 
-  const loginBody = { username: username, password: 'secret' };
-
-  const loginResponse = http.post('http://localhost:3000/api/users/login', JSON.stringify(loginBody), {
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-  });
-
-  const checkLogin = check(loginResponse, {
-    'login status is 200':    (r) => r.status === 200,
-    'token must exist':       (r) => r.json().data.token !== null,
-  });
-
-  if (!checkLogin) {
-    fail(`Login failed for ${username}`);
-  }
-
-  console.log(`VU ${exec.vu.idInInstance} logged in as ${username}`);
-}
-```
-
-> ❓ **What do you observe?** Each VU logs in as a different user (testuser1, testuser2, ... testuser5). This is useful when you've pre-seeded test accounts and want each VU to use its own session.
-
----
-
-## 7. Test Lifecycle — setup() & teardown()
-
-Use `setup()` to prepare test data once before all VUs start, and `teardown()` to clean up after the test.
-
-Create `src/lifecycle.js`:
-
-```javascript
-import http from 'k6/http';
-import { check, fail } from 'k6';
-import exec from 'k6/execution';
-
-export const options = {
-  vus: 5,
-  duration: '15s',
-};
-
-// Runs once before all VUs — seeds product data
-export function setup() {
-  const products = [];
-  for (let i = 0; i < 5; i++) {
-    products.push({
-      name: `Product ${i}`,
-      price: (i + 1) * 10000,
-      stock: 100
-    });
-  }
-
-  console.log(`Setup complete — prepared ${products.length} products`);
-  return products; // passed to default function as parameter
-}
-
-// Runs continuously per VU — uses data from setup()
-export default function (products) {
-  const username = `testuser${exec.vu.idInInstance}`;
-
   const loginResponse = http.post('http://localhost:3000/api/users/login',
-    JSON.stringify({ username: username, password: 'secret' }), {
+    JSON.stringify({ username: username, password: 'rahasia' }), {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
     }
   );
@@ -440,25 +411,99 @@ export default function (products) {
 
   const token = loginResponse.json().data.token;
 
-  // Each VU creates all products using the token
-  for (const product of products) {
-    const response = http.post('http://localhost:3000/api/products', JSON.stringify(product), {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': token
-      }
+  // Search contacts using the logged-in user's token
+  const searchResponse = http.get(
+    'http://localhost:3000/api/contacts?page=1&size=10', {
+      headers: { 'Accept': 'application/json', 'Authorization': token }
+    }
+  );
+
+  check(searchResponse, {
+    'search contacts status is 200': (r) => r.status === 200,
+  });
+
+  console.log(`VU ${exec.vu.idInInstance} logged in as ${username}`);
+}
+```
+
+> ❓ **What do you observe?** Each VU logs in as a different user (testuser1, testuser2, ... testuser5). This is useful when you've pre-seeded test accounts and want each VU to use its own session independently.
+
+---
+
+## 7. Test Lifecycle — setup() & teardown()
+
+Use `setup()` to prepare test data once before all VUs start, and `teardown()` to log cleanup info after.
+
+Create `src/lifecycle.js`:
+
+```javascript
+import http from 'k6/http';
+import { check, fail } from 'k6';
+import exec from 'k6/execution';
+
+export const options = {
+  vus: 5,
+  duration: '15s',
+};
+
+// Runs once before all VUs — prepares contact seed data
+export function setup() {
+  const contacts = [];
+  for (let i = 0; i < 5; i++) {
+    contacts.push({
+      first_name: `Contact`,
+      last_name: `${i}`,
+      email: `contact${i}@example.com`,
+      phone: `0812000000${i}`
     });
+  }
+
+  console.log(`Setup complete — prepared ${contacts.length} contacts`);
+  return contacts;
+}
+
+// Runs continuously per VU — uses data from setup()
+export default function (contacts) {
+  const username = `testuser${exec.vu.idInInstance}`;
+
+  const loginResponse = http.post('http://localhost:3000/api/users/login',
+    JSON.stringify({ username: username, password: 'rahasia' }), {
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    }
+  );
+
+  const checkLogin = check(loginResponse, {
+    'login status is 200': (r) => r.status === 200,
+    'token must exist':    (r) => r.json().data.token !== null,
+  });
+
+  if (!checkLogin) {
+    fail(`Login failed for ${username}`);
+  }
+
+  const token = loginResponse.json().data.token;
+
+  // Each VU creates all contacts from setup data
+  for (const contact of contacts) {
+    const response = http.post('http://localhost:3000/api/contacts',
+      JSON.stringify(contact), {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token
+        }
+      }
+    );
 
     check(response, {
-      'create product status is 200': (r) => r.status === 200,
+      'create contact status is 200': (r) => r.status === 200,
     });
   }
 }
 
 // Runs once after all VUs finish
-export function teardown(products) {
-  console.log(`Teardown — test finished, ${products.length} product types were used`);
+export function teardown(contacts) {
+  console.log(`Teardown — test finished, ${contacts.length} contact types were used`);
 }
 ```
 
@@ -502,17 +547,9 @@ export function getCurrentUser(token) {
     headers: { 'Accept': 'application/json', 'Authorization': token }
   });
 }
-```
 
-`src/helper/product.js`:
-
-```javascript
-import http from 'k6/http';
-
-const BASE_URL = 'http://localhost:3000';
-
-export function createProduct(token, product) {
-  return http.post(`${BASE_URL}/api/products`, JSON.stringify(product), {
+export function updateUser(token, body) {
+  return http.patch(`${BASE_URL}/api/users/current`, JSON.stringify(body), {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -521,10 +558,115 @@ export function createProduct(token, product) {
   });
 }
 
-export function getProducts(token) {
-  return http.get(`${BASE_URL}/api/products`, {
+export function logoutUser(token) {
+  return http.del(`${BASE_URL}/api/users/logout`, null, {
     headers: { 'Accept': 'application/json', 'Authorization': token }
   });
+}
+```
+
+`src/helper/contact.js`:
+
+```javascript
+import http from 'k6/http';
+
+const BASE_URL = 'http://localhost:3000';
+
+export function createContact(token, body) {
+  return http.post(`${BASE_URL}/api/contacts`, JSON.stringify(body), {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': token
+    }
+  });
+}
+
+export function getContact(token, contactId) {
+  return http.get(`${BASE_URL}/api/contacts/${contactId}`, {
+    headers: { 'Accept': 'application/json', 'Authorization': token }
+  });
+}
+
+export function searchContacts(token, params = '') {
+  return http.get(`${BASE_URL}/api/contacts?${params}`, {
+    headers: { 'Accept': 'application/json', 'Authorization': token }
+  });
+}
+
+export function updateContact(token, contactId, body) {
+  return http.put(`${BASE_URL}/api/contacts/${contactId}`, JSON.stringify(body), {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': token
+    }
+  });
+}
+
+export function deleteContact(token, contactId) {
+  return http.del(`${BASE_URL}/api/contacts/${contactId}`, null, {
+    headers: { 'Accept': 'application/json', 'Authorization': token }
+  });
+}
+```
+
+`src/helper/address.js`:
+
+```javascript
+import http from 'k6/http';
+
+const BASE_URL = 'http://localhost:3000';
+
+export function createAddress(token, contactId, body) {
+  return http.post(
+    `${BASE_URL}/api/contacts/${contactId}/addresses`,
+    JSON.stringify(body), {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+  );
+}
+
+export function getAddress(token, contactId, addressId) {
+  return http.get(
+    `${BASE_URL}/api/contacts/${contactId}/addresses/${addressId}`, {
+      headers: { 'Accept': 'application/json', 'Authorization': token }
+    }
+  );
+}
+
+export function listAddresses(token, contactId) {
+  return http.get(
+    `${BASE_URL}/api/contacts/${contactId}/addresses`, {
+      headers: { 'Accept': 'application/json', 'Authorization': token }
+    }
+  );
+}
+
+export function updateAddress(token, contactId, addressId, body) {
+  return http.put(
+    `${BASE_URL}/api/contacts/${contactId}/addresses/${addressId}`,
+    JSON.stringify(body), {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': token
+      }
+    }
+  );
+}
+
+export function deleteAddress(token, contactId, addressId) {
+  return http.del(
+    `${BASE_URL}/api/contacts/${contactId}/addresses/${addressId}`,
+    null, {
+      headers: { 'Accept': 'application/json', 'Authorization': token }
+    }
+  );
 }
 ```
 
@@ -537,7 +679,8 @@ import { check, fail } from 'k6';
 import exec from 'k6/execution';
 
 import { loginUser } from './helper/user.js';
-import { createProduct, getProducts } from './helper/product.js';
+import { createContact, searchContacts } from './helper/contact.js';
+import { createAddress, listAddresses } from './helper/address.js';
 
 export const options = {
   vus: 10,
@@ -546,21 +689,26 @@ export const options = {
 };
 
 export function setup() {
-  const totalProducts = Number(__ENV.TOTAL_PRODUCTS) || 5;
-  const products = [];
-  for (let i = 0; i < totalProducts; i++) {
-    products.push({ name: `Product ${i}`, price: (i + 1) * 10000, stock: 100 });
+  const totalContacts = Number(__ENV.TOTAL_CONTACTS) || 5;
+  const contacts = [];
+  for (let i = 0; i < totalContacts; i++) {
+    contacts.push({
+      first_name: 'Contact',
+      last_name: `${i}`,
+      email: `contact${i}@example.com`,
+      phone: `0812000000${i}`
+    });
   }
-  return products;
+  return contacts;
 }
 
 function getToken() {
   const username = `testuser${exec.vu.idInInstance}`;
-  const loginResponse = loginUser({ username, password: 'secret' });
+  const loginResponse = loginUser({ username, password: 'rahasia' });
 
   const checkLogin = check(loginResponse, {
-    'login status is 200':  (r) => r.status === 200,
-    'token must exist':     (r) => r.json().data.token !== null,
+    'login status is 200': (r) => r.status === 200,
+    'token must exist':    (r) => r.json().data.token !== null,
   });
 
   if (!checkLogin) fail(`Login failed for ${username}`);
@@ -568,25 +716,45 @@ function getToken() {
   return loginResponse.json().data.token;
 }
 
-export default function (products) {
+export default function (contacts) {
   const token = getToken();
 
-  for (const product of products) {
-    const createResponse = createProduct(token, product);
-    check(createResponse, {
-      'create product status is 200': (r) => r.status === 200,
+  for (const contact of contacts) {
+    const createResponse = createContact(token, contact);
+
+    const checkCreate = check(createResponse, {
+      'create contact status is 200': (r) => r.status === 200,
+      'contact id must exist':        (r) => r.json().data.id !== null,
+    });
+
+    if (!checkCreate) continue;
+
+    const contactId = createResponse.json().data.id;
+
+    // Create an address for each contact
+    const addressResponse = createAddress(token, contactId, {
+      street: 'Jl. Merdeka No. 10',
+      city: 'Surabaya',
+      province: 'Jawa Timur',
+      country: 'Indonesia',
+      postal_code: '60111'
+    });
+
+    check(addressResponse, {
+      'create address status is 200': (r) => r.status === 200,
     });
   }
 
-  const listResponse = getProducts(token);
-  check(listResponse, {
-    'get products status is 200':   (r) => r.status === 200,
-    'products list is not empty':   (r) => r.json().data.length > 0,
+  // Search all contacts with pagination
+  const searchResponse = searchContacts(token, 'page=1&size=10');
+  check(searchResponse, {
+    'search contacts status is 200':  (r) => r.status === 200,
+    'paging data must exist':         (r) => r.json().paging !== null,
   });
 }
 
-export function teardown(products) {
-  console.log(`Test complete — used ${products.length} product types`);
+export function teardown(contacts) {
+  console.log(`Test complete — used ${contacts.length} contact types`);
 }
 ```
 
@@ -600,24 +768,19 @@ k6 run src/main.js
 
 ## 9. Environment Variables
 
-Avoid hardcoding values like base URL and product count. Use environment variables instead.
+Avoid hardcoding values like base URL and contact count. Use environment variables instead.
 
 Set variables in your shell:
 
 ```bash
 export BASE_URL=http://localhost:3000
-export TOTAL_PRODUCTS=20
+export TOTAL_CONTACTS=20
 ```
 
-Update `src/helper/user.js` and `src/helper/product.js` to use `__ENV`:
+Update `src/helper/user.js`, `src/helper/contact.js`, and `src/helper/address.js` to use `__ENV`:
 
 ```javascript
-// src/helper/user.js
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
-```
-
-```javascript
-// src/helper/product.js
+// in each helper file, replace hardcoded URL with:
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 ```
 
@@ -625,19 +788,24 @@ Update `setup()` in `src/main.js`:
 
 ```javascript
 export function setup() {
-  const totalProducts = Number(__ENV.TOTAL_PRODUCTS) || 5;
-  const products = [];
-  for (let i = 0; i < totalProducts; i++) {
-    products.push({ name: `Product ${i}`, price: (i + 1) * 10000, stock: 100 });
+  const totalContacts = Number(__ENV.TOTAL_CONTACTS) || 5;
+  const contacts = [];
+  for (let i = 0; i < totalContacts; i++) {
+    contacts.push({
+      first_name: 'Contact',
+      last_name: `${i}`,
+      email: `contact${i}@example.com`,
+      phone: `0812000000${i}`
+    });
   }
-  return products;
+  return contacts;
 }
 ```
 
 Run with environment variables:
 
 ```bash
-TOTAL_PRODUCTS=20 BASE_URL=http://localhost:3000 k6 run src/main.js
+TOTAL_CONTACTS=20 BASE_URL=http://localhost:3000 k6 run src/main.js
 ```
 
 > 💡 This makes your scripts portable across environments — local, staging, and production — without changing any code.
@@ -648,7 +816,7 @@ TOTAL_PRODUCTS=20 BASE_URL=http://localhost:3000 k6 run src/main.js
 
 Instead of one test at a time, run multiple scenarios simultaneously — each simulating a different user behavior.
 
-Update `src/main.js` options:
+Update `src/main.js`:
 
 ```javascript
 import { Counter } from 'k6/metrics';
@@ -656,12 +824,13 @@ import { check, fail } from 'k6';
 import exec from 'k6/execution';
 
 import { registerUser, loginUser } from './helper/user.js';
-import { createProduct, getProducts } from './helper/product.js';
+import { createContact, searchContacts, deleteContact } from './helper/contact.js';
+import { createAddress, listAddresses } from './helper/address.js';
 
 const registerSuccess = new Counter('register_success');
 const registerError   = new Counter('register_error');
-const productSuccess  = new Counter('product_create_success');
-const productError    = new Counter('product_create_error');
+const contactSuccess  = new Counter('contact_create_success');
+const contactError    = new Counter('contact_create_error');
 
 export const options = {
   scenarios: {
@@ -675,17 +844,17 @@ export const options = {
       maxDuration: '30s',
     },
 
-    // Scenario 2: Constant 5 VUs browsing products for 20s
-    browseProducts: {
-      exec: 'browseProducts',
+    // Scenario 2: Constant 5 VUs searching contacts for 20s
+    searchContacts: {
+      exec: 'searchContactsScenario',
       executor: 'constant-vus',
       vus: 5,
       duration: '20s',
     },
 
-    // Scenario 3: Ramp up product creation load
-    createProducts: {
-      exec: 'createProducts',
+    // Scenario 3: Ramp up contact creation load
+    createContacts: {
+      exec: 'createContactsScenario',
       executor: 'ramping-vus',
       stages: [
         { duration: '5s',  target: 5  },
@@ -700,41 +869,45 @@ export function userRegistration() {
   const uniqueId = new Date().getTime();
   const response = registerUser({
     username: `user-${uniqueId}`,
-    password: 'secret',
+    password: 'rahasia',
     name: 'Dzaru Rizky Fathan Fortuna'
   });
 
   response.status === 200 ? registerSuccess.add(1) : registerError.add(1);
 }
 
-export function browseProducts() {
+export function searchContactsScenario() {
   const username = `testuser${exec.vu.idInInstance}`;
-  const loginResponse = loginUser({ username, password: 'secret' });
+  const loginResponse = loginUser({ username, password: 'rahasia' });
 
   if (loginResponse.status !== 200) return;
 
   const token = loginResponse.json().data.token;
-  const listResponse = getProducts(token);
+  const searchResponse = searchContacts(token, 'page=1&size=10');
 
-  check(listResponse, {
-    'get products status is 200': (r) => r.status === 200,
+  check(searchResponse, {
+    'search contacts status is 200': (r) => r.status === 200,
+    'paging data must exist':        (r) => r.json().paging !== null,
   });
 }
 
-export function createProducts() {
+export function createContactsScenario() {
   const username = `testuser${exec.vu.idInInstance}`;
-  const loginResponse = loginUser({ username, password: 'secret' });
+  const loginResponse = loginUser({ username, password: 'rahasia' });
 
   if (loginResponse.status !== 200) return;
 
   const token = loginResponse.json().data.token;
-  const response = createProduct(token, {
-    name: `Product-${new Date().getTime()}`,
-    price: 50000,
-    stock: 10
+  const uniqueId = new Date().getTime();
+
+  const response = createContact(token, {
+    first_name: 'Load',
+    last_name: `Test-${uniqueId}`,
+    email: `load-${uniqueId}@example.com`,
+    phone: '081200000000'
   });
 
-  response.status === 200 ? productSuccess.add(1) : productError.add(1);
+  response.status === 200 ? contactSuccess.add(1) : contactError.add(1);
 }
 ```
 
@@ -826,17 +999,17 @@ Open your browser at `http://localhost:5665` while the test is running.
 
 Once you've completed the practice above, try these on your own:
 
-1. **Add a `DELETE /api/products/:id` scenario** using the `per-vu-iterations` executor — each VU deletes 5 products. Use a `Counter` to track successful deletes.
+1. **Add a `DELETE /api/contacts/:id` scenario** using the `per-vu-iterations` executor — each VU creates then immediately deletes 5 contacts. Use a `Counter` to track successful deletes.
 
-2. **Simulate a traffic spike** using `ramping-arrival-rate` — ramp from 10 iterations/sec to 100 iterations/sec over 30 seconds on the `GET /api/products` endpoint. Observe at what point the `http_req_duration` p(95) starts degrading.
+2. **Simulate a traffic spike on contact search** using `ramping-arrival-rate` — ramp from 10 iterations/sec to 100 iterations/sec over 30 seconds on `GET /api/contacts`. Observe at what point the `http_req_duration` p(95) starts degrading.
 
-3. **Add a threshold for the product creation success rate** — at least 95% of create product requests must succeed. Then intentionally break it by sending invalid data and verify k6 exits with a non-zero code.
+3. **Add a threshold for the contact creation success rate** — at least 95% of create contact requests must succeed. Then intentionally break it by sending an invalid email format and verify k6 exits with a non-zero code.
 
 4. **Use `uuidv4` from the k6 JS library** (`https://jslib.k6.io/k6-utils/1.4.0/index.js`) instead of `new Date().getTime()` for generating unique usernames in the registration scenario.
 
 5. **Export results to both CSV and JSON simultaneously** in a single run, then open the CSV and verify the `http_req_duration` values match the terminal summary.
 
-6. **Move `BASE_URL` and `TOTAL_PRODUCTS`** to a config object in a new `src/config.js` module, and import it in both helper files — no more `__ENV` calls scattered across files.
+6. **Move `BASE_URL` and `TOTAL_CONTACTS`** to a config object in a new `src/config.js` module, and import it in all helper files — no more `__ENV` calls scattered across files.
 
 ---
 
@@ -850,12 +1023,17 @@ Once you've completed the practice above, try these on your own:
 | GET request | Step 2 |
 | POST request with JSON body | Step 3 |
 | Working with response & chaining requests | Step 4 |
+| Capturing response ID for chained requests | Step 4 — contactId → address |
 | check() — non-blocking validation | Step 5 |
 | fail() — stop iteration on error | Step 5 |
 | Execution context (exec.vu.idInInstance) | Step 6 |
 | setup() — prepare data once | Step 7 |
 | teardown() — cleanup after test | Step 7 |
 | Modular scripts (helper modules) | Step 8 |
+| PUT request | Step 8 — updateContact, updateAddress |
+| DELETE request | Step 8 — deleteContact, deleteAddress |
+| PATCH request | Step 8 — updateUser |
+| Query params in GET | Step 8 — searchContacts |
 | Environment variables (__ENV) | Step 9 |
 | shared-iterations executor | Step 10 |
 | constant-vus executor | Step 10 |
