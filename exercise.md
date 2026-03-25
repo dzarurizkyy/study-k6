@@ -270,7 +270,7 @@ export default function () {
   const registerResponse = http.post('http://localhost:3000/api/users',
     JSON.stringify({
       username: `user-${uniqueId}`,
-      password: 'rahasia',
+      password: 'secret',
       name: 'Dzaru Rizky Fathan Fortuna'
     }), {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
@@ -288,7 +288,7 @@ export default function () {
 
   // Login
   const loginResponse = http.post('http://localhost:3000/api/users/login',
-    JSON.stringify({ username: `user-${uniqueId}`, password: 'rahasia' }), {
+    JSON.stringify({ username: `user-${uniqueId}`, password: 'secret' }), {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
     }
   );
@@ -395,7 +395,7 @@ export default function () {
   const username = `testuser${exec.vu.idInInstance}`;
 
   const loginResponse = http.post('http://localhost:3000/api/users/login',
-    JSON.stringify({ username: username, password: 'rahasia' }), {
+    JSON.stringify({ username: username, password: 'secret' }), {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
     }
   );
@@ -467,7 +467,7 @@ export default function (contacts) {
   const username = `testuser${exec.vu.idInInstance}`;
 
   const loginResponse = http.post('http://localhost:3000/api/users/login',
-    JSON.stringify({ username: username, password: 'rahasia' }), {
+    JSON.stringify({ username: username, password: 'secret' }), {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
     }
   );
@@ -704,7 +704,7 @@ export function setup() {
 
 function getToken() {
   const username = `testuser${exec.vu.idInInstance}`;
-  const loginResponse = loginUser({ username, password: 'rahasia' });
+  const loginResponse = loginUser({ username, password: 'secret' });
 
   const checkLogin = check(loginResponse, {
     'login status is 200': (r) => r.status === 200,
@@ -869,7 +869,7 @@ export function userRegistration() {
   const uniqueId = new Date().getTime();
   const response = registerUser({
     username: `user-${uniqueId}`,
-    password: 'rahasia',
+    password: 'secret',
     name: 'Dzaru Rizky Fathan Fortuna'
   });
 
@@ -878,7 +878,7 @@ export function userRegistration() {
 
 export function searchContactsScenario() {
   const username = `testuser${exec.vu.idInInstance}`;
-  const loginResponse = loginUser({ username, password: 'rahasia' });
+  const loginResponse = loginUser({ username, password: 'secret' });
 
   if (loginResponse.status !== 200) return;
 
@@ -893,7 +893,7 @@ export function searchContactsScenario() {
 
 export function createContactsScenario() {
   const username = `testuser${exec.vu.idInInstance}`;
-  const loginResponse = loginUser({ username, password: 'rahasia' });
+  const loginResponse = loginUser({ username, password: 'secret' });
 
   if (loginResponse.status !== 200) return;
 
