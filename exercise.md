@@ -108,7 +108,7 @@ export const options = {
 };
 
 export default function () {
-  http.get('http://localhost:3000/api/products');
+  http.get('http://localhost:3000/api/ping');
   sleep(1);
 }
 ```
@@ -210,7 +210,7 @@ export const options = {
 export default function () {
   const uniqueId = new Date().getTime();
 
-  // Step 1 — Register
+  // Step 1 — Register/products/
   const registerBody = {
     username: `user-${uniqueId}`,
     password: 'secret',
