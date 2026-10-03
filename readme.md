@@ -1,77 +1,63 @@
 # Study k6 ⚡
 
-This repository contains examples of basic k6 load testing commands, script structure, and practical scenarios to practice and strengthen your performance testing skills with k6.
+This repository contains a comprehensive reference guide for k6 — covering installation, writing and running scripts, options, HTTP requests, validation, the test lifecycle, scenarios, metrics, thresholds, and reporting, worked through hands-on against a REST API.
 
 ## Installation 🔧
 
-1. **macOS** (using Homebrew):
-   ```bash
-   brew install k6
-   ```
+1. **Install k6**:
 
-2. **Windows** (using Chocolatey):
-   ```bash
-   choco install k6
-   ```
+    ```bash
+    # macOS (Homebrew)
+    brew install k6
+    ```
 
-3. Verify installation:
+   > **Windows**: `choco install k6`
+
+2. **Verify the Installation**:
+
    ```bash
    k6 --version
    ```
 
+   > Reference: [grafana.com/docs/k6/latest/set-up/install-k6](https://grafana.com/docs/k6/latest/set-up/install-k6/)
+
 ## List of Material 📚
 
-* 📘 **k6 Basic**
-  
-  Contains examples of basic k6 load testing, including:
-  
+- ⚡ **[k6 Load Testing](001-k6-basics.md)**
+
+  Script structure, options and stages, HTTP requests, checks, the test lifecycle, modular scripts, environment variables, scenarios and executors, custom metrics, thresholds, and output & reporting:
+
   ```javascript
-  import http from 'k6/http';
-  import { sleep, check } from 'k6';
-  
-  // Configure test options
+  import http from "k6/http";
+  import { check, sleep } from "k6";
+
   export const options = {
-    vus: 10,           // 10 virtual users
-    duration: '30s',   // Run for 30 seconds
+    vus: 10,
+    duration: "30s",
   };
-  
-  // Main test function
-  export default function() {
-    // Make HTTP request
-    const response = http.get('http://localhost:3000/api/users');
-    
-    // Validate response
+
+  export default function () {
+    const response = http.get("http://localhost:3000/api/users");
+
     check(response, {
-      'status is 200': (r) => r.status === 200,
-      'response time < 500ms': (r) => r.timings.duration < 500,
+      "status is 200": (r) => r.status === 200,
+      "response time < 500ms": (r) => r.timings.duration < 500,
     });
-    
-    // Wait 1 second before next iteration
+
     sleep(1);
   }
   ```
-  
+
   Run the test:
+
   ```bash
-  k6 run script.js
-  ```
-  
-  Common commands:
-  ```bash
-  # Run with custom VUs and duration
   k6 run --vus 50 --duration 1m script.js
-  
-  # Export results to JSON
-  k6 run --out json=results.json script.js
-  
-  # Enable web dashboard
-  K6_WEB_DASHBOARD=true k6 run script.js
   ```
 
 ## 📍 References
 
-* [Udemy](https://www.udemy.com/course/belajar-k6/)
+- [Udemy](https://www.udemy.com/course/belajar-k6/)
 
 ## 👨‍💻 Contributors
 
-* [Dzaru Rizky Fathan Fortuna](https://www.linkedin.com/in/dzarurizky)
+- [Dzaru Rizky Fathan Fortuna](https://www.linkedin.com/in/dzarurizky)
